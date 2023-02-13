@@ -1,14 +1,16 @@
 import tkinter as tk
 import random
 
-from main import get_min_difference, Point
+from main import get_min_difference, Point, get_circle_center, get_circle_radius
 
 canvas_width = 500
 canvas_height = 500
 
 points = []
 triangle = []
+circle = []
 width = 15
+
 
 def display_message(message, color):
     message_box.config(state='normal', fg=color)
@@ -86,6 +88,13 @@ def solve():
     triangle.append(line1)
     triangle.append(line2)
     triangle.append(line3)
+
+    o = get_circle_center(p1, p2, p3)
+    r = get_circle_radius(p1, p2, p3)
+
+    for auto in circle:
+        canvas.delete(auto)
+    circle.append(canvas.create_oval(o.x - r, o.y - r, o.x + r, o.y + r, fill='', outline='black'))
 
 
 def draw_grid(step):
