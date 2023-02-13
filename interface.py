@@ -6,6 +6,9 @@ from main import get_min_difference, Point
 canvas_width = 500
 canvas_height = 500
 
+points = []
+triangle = []
+width = 15
 
 def display_message(message, color):
     message_box.config(state='normal', fg=color)
@@ -41,7 +44,8 @@ def add_point():
             points.append(Point(x, y))
             canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
         else:
-            display_message(f"Error: Invalid input. There must be |x| <= {canvas_width / 2} and |y| <= {canvas_height / 2} ", "red")
+            display_message(
+                f"Error: Invalid input. There must be |x| <= {canvas_width / 2} and |y| <= {canvas_height / 2} ", "red")
     except ValueError:
         display_message("Error: Invalid input, must be a number", "red")
 
@@ -60,15 +64,28 @@ def delete_point():
             canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
 
 
-
 def solve():
     if len(points) < 3:
         display_message("Error: There must be at least three points", "red")
         return
 
-    min_diff, res = get_min_difference(points)
+    min_diff, res_points = get_min_difference(points)
     print("Минимальная разность:", min_diff)
-    print("При точках:", res[0] + 1, res[1] + 1, res[2] + 1)
+    print("При точках:", res_points[0] + 1, res_points[1] + 1, res_points[2] + 1)
+
+    p1 = points[res_points[0]]
+    p2 = points[res_points[1]]
+    p3 = points[res_points[2]]
+
+    for line in triangle:
+        canvas.delete(line)
+
+    line1 = canvas.create_line(p1.x, p1.y, p2.x, p2.y, fill="blue")
+    line2 = canvas.create_line(p2.x, p2.y, p3.x, p3.y, fill="blue")
+    line3 = canvas.create_line(p3.x, p3.y, p1.x, p1.y, fill="blue")
+    triangle.append(line1)
+    triangle.append(line2)
+    triangle.append(line3)
 
 
 def draw_grid(step):
@@ -110,11 +127,10 @@ def draw_canvas():
     # draw black border around canvas
     canvas.create_rectangle(2, 2, canvas_width, canvas_height, outline='black')
 
+
 root = tk.Tk()
 root.title("Circumcircle Problem")
 root.geometry("1000x600")
-points = []
-width = 15
 
 message_box = tk.Text(root, height=2, width=50, state='disabled')
 message_box.pack(side='top', fill='x', padx=5, pady=5)
@@ -153,6 +169,5 @@ delete_button.pack(side='top')
 
 solve_button = tk.Button(root, text="Solve", command=solve, width=width)
 solve_button.pack(side='top')
-
 
 root.mainloop()
