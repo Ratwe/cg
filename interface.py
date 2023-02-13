@@ -9,6 +9,8 @@ canvas_height = 500
 points = []
 triangle = []
 circle = []
+o_text = []
+o_centre = []
 width = 15
 
 
@@ -61,6 +63,7 @@ def delete_point():
         canvas.delete("all")
         draw_canvas()
 
+        # вот тут трабл
         for point in points:
             x, y = point
             canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
@@ -90,11 +93,18 @@ def solve():
     triangle.append(line3)
 
     o = get_circle_center(p1, p2, p3)
+    if o is None:
+        display_message("Error: Impossible to get circle centre", "red")
+        return
     r = get_circle_radius(p1, p2, p3)
 
     for auto in circle:
         canvas.delete(auto)
-    circle.append(canvas.create_oval(o.x - r, o.y - r, o.x + r, o.y + r, fill='', outline='black'))
+    circle.append(canvas.create_oval(o.x - r, o.y - r, o.x + r, o.y + r, fill='', outline='green'))
+
+    o_coords = Point(- canvas_width / 2 + o.x, canvas_height / 2 - o.y)
+    circle.append(canvas.create_oval(o.x - 3, o.y - 3, o.x + 3, o.y + 3, fill="green"))
+    circle.append(canvas.create_text(o.x + 10, o.y - 10, text=f"({o_coords.x:.3f}, {o_coords.y:.3f})", anchor=tk.W))
 
 
 def draw_grid(step):

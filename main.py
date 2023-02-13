@@ -22,6 +22,8 @@ def is_point_in_circle(point: Point, triangle: List[Point]):
 
 def get_circle_center(a: Point, b: Point, c: Point):
     d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y))
+    if d == 0:
+        return None
     x = ((a.x ** 2 + a.y ** 2) * (b.y - c.y) + (b.x ** 2 + b.y ** 2) * (c.y - a.y) + (c.x ** 2 + c.y ** 2) * (
             a.y - b.y)) / d
     y = ((a.x ** 2 + a.y ** 2) * (c.x - b.x) + (b.x ** 2 + b.y ** 2) * (a.x - c.x) + (c.x ** 2 + c.y ** 2) * (
