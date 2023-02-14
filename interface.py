@@ -1,35 +1,35 @@
 import tkinter as tk
 import random
 
+from numpy import sqrt
+
 from main import get_min_difference, Point, get_circle_center, get_circle_radius
 
 canvas_width = 600
 canvas_height = 600
+coords_range = min(canvas_height, canvas_width) / 4
 
 points = []
 triangle = []
 circle = []
 o_text = []
 o_centre = []
+r = canvas_width / 2
 width = 15
 pnum = 1
 
 
 def display_message(message, color):
-    font = None
-    if color == "black":
-        font = "bold"
-
-    message_box.config(state='normal', fg=color, font=font)
+    message_box.config(state='normal', fg=color)
     message_box.delete("1.0", "end")
     message_box.insert("end", message)
     message_box.config(state='disabled')
 
 
 def add_random_point():
-    global pnum
-    x = float(random.randint(- int(canvas_width / 2), int(canvas_width / 2)))
-    y = float(random.randint(- int(canvas_height / 2), int(canvas_height / 2)))
+    global pnum, coords_range
+    x = float(random.randint(- int(coords_range), int(coords_range)))
+    y = float(random.randint(- int(coords_range), int(coords_range)))
 
     display_message("Point {} added: ({}, {})".format(pnum, x, y), "green")
     listbox.insert(tk.END, f"Point {pnum}: ({x}, {y})")
@@ -37,7 +37,7 @@ def add_random_point():
     x = canvas_width / 2 + x
     y = canvas_height / 2 - y
     points.append(Point(x, y, pnum))
-    canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
+    # canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
 
     pnum += 1
 
@@ -48,18 +48,18 @@ def add_point():
         y = float(y_entry.get())
         global pnum
 
-        if abs(x) <= canvas_width / 2 and abs(y) <= canvas_height / 2:
+        if abs(x) <= coords_range and abs(y) <= coords_range:
             display_message("Point {} added: ({}, {})".format(pnum, x, y), "green")
             listbox.insert(tk.END, f"Point {pnum}: ({x}, {y})")
 
             x = canvas_width / 2 + x
             y = canvas_height / 2 - y
             points.append(Point(x, y, pnum))
-            canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
+            # canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
             pnum += 1
         else:
             display_message(
-                f"Error: Invalid input. There must be |x| <= {canvas_width / 2} and |y| <= {canvas_height / 2} ", "red")
+                f"Error: Invalid input. There must be |x| <= {coords_range} and |y| <= {coords_range} ", "red")
     except ValueError:
         display_message("Error: Invalid input, must be a number", "red")
 
@@ -92,8 +92,23 @@ def solve():
     p2 = points[res_points[1]]
     p3 = points[res_points[2]]
 
+    o = get_circle_center(p1, p2, p3)
+    if o is None:
+        display_message("Error: Impossible to get circle centre", "red")
+        for auto in triangle:
+            canvas.delete(auto)
+        return
+    r = get_circle_radius(p1, p2, p3)
+    real_r = 250
+    k = r / real_r
+
     for auto in triangle:
         canvas.delete(auto)
+
+    triangle.append(canvas.create_oval(p1.x * k - 3, p1.y * k - 3,
+                                       p1.x * k + 3, p1.y * k + 3, fill="black"))
+    triangle.append(canvas.create_oval(p2.x - 3, p2.y - 3, p2.x + 3, p2.y + 3, fill="black"))
+    triangle.append(canvas.create_oval(p3.x - 3, p3.y - 3, p3.x + 3, p3.y + 3, fill="black"))
 
     p1_coords = Point(- canvas_width / 2 + p1.x, canvas_height / 2 - p1.y, None)
     triangle.append(canvas.create_text(p1.x + 10, p1.y - 10, text=f"({p1_coords.x:.3f}, {p1_coords.y:.3f})", anchor=tk.W))
@@ -114,25 +129,17 @@ def solve():
     triangle.append(line2)
     triangle.append(line3)
 
-    o = get_circle_center(p1, p2, p3)
-    if o is None:
-        display_message("Error: Impossible to get circle centre", "red")
-        for auto in triangle:
-            canvas.delete(auto)
-        return
-    r = get_circle_radius(p1, p2, p3)
-
     for auto in circle:
         canvas.delete(auto)
-    circle.append(canvas.create_oval(o.x - r, o.y - r, o.x + r, o.y + r, fill='', outline='green'))
+    circle.append(canvas.create_oval(canvas_width / 2 - real_r, canvas_height / 2 - real_r, canvas_width / 2 + real_r,
+                                     canvas_height / 2 + real_r, fill='', outline='green'))
 
     o_coords = Point(- canvas_width / 2 + o.x, canvas_height / 2 - o.y, None)
-    circle.append(canvas.create_oval(o.x - 4, o.y - 4, o.x + 4, o.y + 4, fill="green"))
-    circle.append(canvas.create_text(o.x + 10, o.y - 10, text=f"({o_coords.x:.3f}, {o_coords.y:.3f})", anchor=tk.W))
+    circle.append(canvas.create_oval(canvas_width / 2 - 4, canvas_height / 2 - 4, canvas_width / 2 + 4, canvas_height / 2 + 4, fill="green"))
+    circle.append(canvas.create_text(canvas_width / 2 + 10, canvas_height / 2 - 10, text=f"({o_coords.x:.3f}, {o_coords.y:.3f})", anchor=tk.W))
 
     display_message(f"Result: minimal diff is {min_diff}: points in triangle - {p_in}, out of - {p_out}\n"
                     f"Triangle is based on points №{p1.num}, {p2.num}, {p3.num}", "black")
-    print("При точках:", res_points[0] + 1, res_points[1] + 1, res_points[2] + 1)
 
 
 def draw_grid(step):
@@ -146,33 +153,33 @@ def draw_canvas():
     draw_grid(10)
 
     # Draw the origin
-    canvas.create_text(canvas_width / 2 + 5, canvas_height / 2 + 10, text="(0, 0)", anchor=tk.W)
+    # canvas.create_text(canvas_width / 2 + 5, canvas_height / 2 + 10, text="(0, 0)", anchor=tk.W)
 
     # Draw the x and y axis ticks
     for x in range(0, canvas_width - 1, 50):
-        if not x or x == abs(canvas_width / 2) or abs(x) == canvas_width:
+        if not x or abs(x) == canvas_width:
             continue
-        canvas.create_line(x, canvas_height / 2 - 5, x, canvas_height / 2 + 5, width=1)
-        canvas.create_text(x, canvas_height / 2 + 10, text=str(x - canvas_width / 2), anchor='n')
+        canvas.create_line(x, canvas_height - 5, x, canvas_height, width=1)
+        canvas.create_text(x, canvas_height - 20, text=str(x - canvas_width / 2), anchor='n')
 
     for y in range(0, canvas_height - 1, 50):
-        if not y or y == abs(canvas_height / 2) or abs(y) == canvas_height:
+        if not y or abs(y) == canvas_height:
             continue
-        canvas.create_line(canvas_width / 2 - 5, y, canvas_width / 2 + 5, y, width=1)
-        canvas.create_text(canvas_width / 2 + 10, y, text=str(canvas_height / 2 - y), anchor='w')
+        canvas.create_line(-5, y, 5, y, width=1)
+        canvas.create_text(10, y, text=str(canvas_height / 2 - y), anchor='w')
 
     # Label the x and y axis
-    canvas.create_text(canvas_width - 10, canvas_height / 2 + 15, text='X', anchor='e')
-    canvas.create_text(canvas_width / 2 - 15, 10, text='Y', anchor='w')
+    canvas.create_text(canvas_width - 3, canvas_height - 15, text='X', anchor='e')
+    canvas.create_text(15, 10, text='Y', anchor='w')
 
     # draw X axis
-    canvas.create_line(0, canvas_height / 2, canvas_width, canvas_height / 2, arrow=tk.LAST, fill='black')
+    canvas.create_line(3, canvas_height - 3, canvas_width, canvas_height - 3, arrow=tk.LAST, fill='black')
 
     # draw Y axis
-    canvas.create_line(canvas_height / 2, canvas_height, canvas_width / 2, 0, arrow=tk.LAST, fill='black')
+    canvas.create_line(5, canvas_height, 5, 5, arrow=tk.LAST, fill='black')
 
     # draw black border around canvas
-    canvas.create_rectangle(2, 2, canvas_width, canvas_height, outline='black')
+    # canvas.create_rectangle(2, 2, canvas_width, canvas_height, outline='black')
 
 
 root = tk.Tk()
