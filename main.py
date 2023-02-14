@@ -6,9 +6,10 @@ from numpy import fabs
 
 
 class Point:
-    def __init__(self, x, y):
+    def __init__(self, x, y, num):
         self.x = x
         self.y = y
+        self.num = num
 
 
 def is_point_in_circle(point: Point, triangle: List[Point]):
@@ -16,6 +17,8 @@ def is_point_in_circle(point: Point, triangle: List[Point]):
     b = triangle[1]
     c = triangle[2]
     center = get_circle_center(a, b, c)
+    if center is None:
+        return None
     radius = get_circle_radius(a, b, c)
     return math.sqrt((point.x - center.x) ** 2 + (point.y - center.y) ** 2) < radius
 
@@ -28,7 +31,7 @@ def get_circle_center(a: Point, b: Point, c: Point):
             a.y - b.y)) / d
     y = ((a.x ** 2 + a.y ** 2) * (c.x - b.x) + (b.x ** 2 + b.y ** 2) * (a.x - c.x) + (c.x ** 2 + c.y ** 2) * (
             b.x - a.x)) / d
-    return Point(x, y)
+    return Point(x, y, None)
 
 
 def get_circle_radius(a: Point, b: Point, c: Point):
@@ -56,6 +59,8 @@ def get_min_difference(points: List[Point]):
     n = len(points)
     min_diff = float("inf")
     res = None
+    p_in = 0
+    p_out = 0
 
     for i in range(n):
         for j in range(i + 1, n):
@@ -66,27 +71,24 @@ def get_min_difference(points: List[Point]):
                 for point in points:
                     if is_point_in_triangle(point, triangle):
                         count_in_triangle += 1
-                    elif is_point_in_circle(point, triangle):
+                    elif is_point_in_circle(point, triangle) is not None:
                         count_in_circle += 1
                 diff = abs(count_in_triangle - count_in_circle)
                 if diff < min_diff:
                     min_diff = diff
                     res = i, j, k
+                    p_in = count_in_triangle
+                    p_out = count_in_circle
 
-    return min_diff, res
+    return min_diff, res, p_in, p_out
 
 
 def generate_points(n):
     points = []
+    pnum = 0
     for i in range(n):
         x = random.uniform(0, 10)
         y = random.uniform(0, 10)
-        points.append(Point(x, y))
+        points.append(Point(x, y, pnum))
     return points
-
-
-my_points = generate_points(10)
-min_diff, res = get_min_difference(my_points)
-print("Минимальная разность:", min_diff)
-print("При точках:", res)
 

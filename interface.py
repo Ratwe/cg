@@ -3,8 +3,8 @@ import random
 
 from main import get_min_difference, Point, get_circle_center, get_circle_radius
 
-canvas_width = 500
-canvas_height = 500
+canvas_width = 600
+canvas_height = 600
 
 points = []
 triangle = []
@@ -12,41 +12,51 @@ circle = []
 o_text = []
 o_centre = []
 width = 15
+pnum = 1
 
 
 def display_message(message, color):
-    message_box.config(state='normal', fg=color)
+    font = None
+    if color == "black":
+        font = "bold"
+
+    message_box.config(state='normal', fg=color, font=font)
     message_box.delete("1.0", "end")
     message_box.insert("end", message)
     message_box.config(state='disabled')
 
 
 def add_random_point():
+    global pnum
     x = float(random.randint(- int(canvas_width / 2), int(canvas_width / 2)))
     y = float(random.randint(- int(canvas_height / 2), int(canvas_height / 2)))
 
-    display_message("Point added: ({}, {})".format(x, y), "green")
-    listbox.insert(tk.END, f"Point {len(points) + 1}: ({x}, {y})")
+    display_message("Point {} added: ({}, {})".format(pnum, x, y), "green")
+    listbox.insert(tk.END, f"Point {pnum}: ({x}, {y})")
 
     x = canvas_width / 2 + x
     y = canvas_height / 2 - y
-    points.append(Point(x, y))
+    points.append(Point(x, y, pnum))
     canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
+
+    pnum += 1
 
 
 def add_point():
     try:
         x = float(x_entry.get())
         y = float(y_entry.get())
+        global pnum
 
         if abs(x) <= canvas_width / 2 and abs(y) <= canvas_height / 2:
-            display_message("Point added: ({}, {})".format(x, y), "green")
-            listbox.insert(tk.END, f"Point {len(points) + 1}: ({x}, {y})")
+            display_message("Point {} added: ({}, {})".format(pnum, x, y), "green")
+            listbox.insert(tk.END, f"Point {pnum}: ({x}, {y})")
 
             x = canvas_width / 2 + x
             y = canvas_height / 2 - y
-            points.append(Point(x, y))
+            points.append(Point(x, y, pnum))
             canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
+            pnum += 1
         else:
             display_message(
                 f"Error: Invalid input. There must be |x| <= {canvas_width / 2} and |y| <= {canvas_height / 2} ", "red")
@@ -56,16 +66,18 @@ def add_point():
 
 def delete_point():
     selected = listbox.curselection()
+
     if selected:
         index = selected[0]
+        display_message(f"Point {points[index].num} ({- canvas_width / 2 + points[index].x}, {canvas_height / 2 - points[index].y}) removed", "green")
         listbox.delete(index)
         del points[index]
         canvas.delete("all")
         draw_canvas()
 
-        # вот тут трабл
         for point in points:
-            x, y = point
+            x = point.x
+            y = point.y
             canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
 
 
@@ -74,16 +86,26 @@ def solve():
         display_message("Error: There must be at least three points", "red")
         return
 
-    min_diff, res_points = get_min_difference(points)
-    print("Минимальная разность:", min_diff)
-    print("При точках:", res_points[0] + 1, res_points[1] + 1, res_points[2] + 1)
+    min_diff, res_points, p_in, p_out = get_min_difference(points)
 
     p1 = points[res_points[0]]
     p2 = points[res_points[1]]
     p3 = points[res_points[2]]
 
-    for line in triangle:
-        canvas.delete(line)
+    for auto in triangle:
+        canvas.delete(auto)
+
+    p1_coords = Point(- canvas_width / 2 + p1.x, canvas_height / 2 - p1.y, None)
+    triangle.append(canvas.create_text(p1.x + 10, p1.y - 10, text=f"({p1_coords.x:.3f}, {p1_coords.y:.3f})", anchor=tk.W))
+    triangle.append(canvas.create_text(p1.x - 10, p1.y + 12, text=f"№{p1.num}", anchor=tk.W))
+
+    p2_coords = Point(- canvas_width / 2 + p2.x, canvas_height / 2 - p2.y, None)
+    triangle.append(canvas.create_text(p2.x + 10, p2.y - 10, text=f"({p2_coords.x:.3f}, {p2_coords.y:.3f})", anchor=tk.W))
+    triangle.append(canvas.create_text(p2.x - 10, p2.y + 12, text=f"№{p2.num}", anchor=tk.W))
+
+    p3_coords = Point(- canvas_width / 2 + p3.x, canvas_height / 2 - p3.y, None)
+    triangle.append(canvas.create_text(p3.x + 10, p3.y - 10, text=f"({p3_coords.x:.3f}, {p3_coords.y:.3f})", anchor=tk.W))
+    triangle.append(canvas.create_text(p3.x - 10, p3.y + 12, text=f"№{p3.num}", anchor=tk.W))
 
     line1 = canvas.create_line(p1.x, p1.y, p2.x, p2.y, fill="blue")
     line2 = canvas.create_line(p2.x, p2.y, p3.x, p3.y, fill="blue")
@@ -95,6 +117,8 @@ def solve():
     o = get_circle_center(p1, p2, p3)
     if o is None:
         display_message("Error: Impossible to get circle centre", "red")
+        for auto in triangle:
+            canvas.delete(auto)
         return
     r = get_circle_radius(p1, p2, p3)
 
@@ -102,9 +126,13 @@ def solve():
         canvas.delete(auto)
     circle.append(canvas.create_oval(o.x - r, o.y - r, o.x + r, o.y + r, fill='', outline='green'))
 
-    o_coords = Point(- canvas_width / 2 + o.x, canvas_height / 2 - o.y)
-    circle.append(canvas.create_oval(o.x - 3, o.y - 3, o.x + 3, o.y + 3, fill="green"))
+    o_coords = Point(- canvas_width / 2 + o.x, canvas_height / 2 - o.y, None)
+    circle.append(canvas.create_oval(o.x - 4, o.y - 4, o.x + 4, o.y + 4, fill="green"))
     circle.append(canvas.create_text(o.x + 10, o.y - 10, text=f"({o_coords.x:.3f}, {o_coords.y:.3f})", anchor=tk.W))
+
+    display_message(f"Result: minimal diff is {min_diff}: points in triangle - {p_in}, out of - {p_out}\n"
+                    f"Triangle is based on points №{p1.num}, {p2.num}, {p3.num}", "black")
+    print("При точках:", res_points[0] + 1, res_points[1] + 1, res_points[2] + 1)
 
 
 def draw_grid(step):
@@ -148,11 +176,21 @@ def draw_canvas():
 
 
 root = tk.Tk()
-root.title("Circumcircle Problem")
-root.geometry("1000x600")
+root.title("Задача о нахождении оптимального треугольника")
+root.geometry("1100x750")
+root.resizable(False, False)
 
 message_box = tk.Text(root, height=2, width=50, state='disabled')
 message_box.pack(side='top', fill='x', padx=5, pady=5)
+
+# создаем метку (надпись) с двумя строками текста
+label = tk.Label(root, text="На плоскости дано множество точек.\nНайти такой треугольник с вершинами в этих точках, "
+                            "для которого разность количеств\nточек этого множества, попавших внутрь треугольника и за "
+                            "его пределы, но внутри описанной окружности, минимальна.", font=("Arial", 12),
+                            wraplength=root.winfo_screenwidth(), justify="left")
+
+# располагаем метку внизу окна и центрируем ее по левой стороне
+label.pack(side="bottom", anchor="w")
 
 canvas = tk.Canvas(root, width=canvas_width, height=canvas_height, bg='white')
 canvas.pack(side="right", padx=20)
