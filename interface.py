@@ -12,8 +12,6 @@ coords_range = 1000  # min(canvas_height, canvas_width)
 padding = 0
 
 points = []
-triangle = []
-circle = []
 o_text = []
 o_centre = []
 r = canvas_width / 2
@@ -77,7 +75,6 @@ def delete_point():
         listbox.delete(index)
         del points[index]
         canvas.delete("all")
-        draw_canvas()
 
         for point in points:
             x = point.x
@@ -95,57 +92,93 @@ def solve():
     p1 = points[res_points[0]]
     p2 = points[res_points[1]]
     p3 = points[res_points[2]]
+    center = get_circle_center(p1, p2, p3)
+    print(f"center: ({center.x}, {center.y})")
 
-    for line in triangle:
-        canvas.delete(line)
-    for auto in triangle:
-        canvas.delete(auto)
-
-    # p1_coords = Point(- canvas_width / 2 + p1.x, canvas_height / 2 - p1.y, None)
-    # triangle.append(
-    #     canvas.create_text(p1.x + 10, p1.y - 10, text=f"({p1_coords.x:.3f}, {p1_coords.y:.3f})", anchor=tk.W))
-    # triangle.append(canvas.create_text(p1.x - 10, p1.y + 12, text=f"№{p1.num}", anchor=tk.W))
-    #
-    # p2_coords = Point(- canvas_width / 2 + p2.x, canvas_height / 2 - p2.y, None)
-    # triangle.append(
-    #     canvas.create_text(p2.x + 10, p2.y - 10, text=f"({p2_coords.x:.3f}, {p2_coords.y:.3f})", anchor=tk.W))
-    # triangle.append(canvas.create_text(p2.x - 10, p2.y + 12, text=f"№{p2.num}", anchor=tk.W))
-    #
-    # p3_coords = Point(- canvas_width / 2 + p3.x, canvas_height / 2 - p3.y, None)
-    # triangle.append(
-    #     canvas.create_text(p3.x + 10, p3.y - 10, text=f"({p3_coords.x:.3f}, {p3_coords.y:.3f})", anchor=tk.W))
-    # triangle.append(canvas.create_text(p3.x - 10, p3.y + 12, text=f"№{p3.num}", anchor=tk.W))
-    #
-    # line1 = canvas.create_line(p1.x, p1.y, p2.x, p2.y, fill="blue")
-    # line2 = canvas.create_line(p2.x, p2.y, p3.x, p3.y, fill="blue")
-    # line3 = canvas.create_line(p3.x, p3.y, p1.x, p1.y, fill="blue")
-    # triangle.append(line1)
-    # triangle.append(line2)
-    # triangle.append(line3)
-    #
-    o = get_circle_center(p1, p2, p3)
-    if o is None:
-        display_message("Error: Impossible to get circle centre", "red")
-        for auto in triangle:
-            canvas.delete(auto)
-        return
-    r = get_circle_radius(p1, p2, p3)
-
-    for auto in circle:
-        canvas.delete(auto)
-    circle.clear()
-    # circle.append(canvas.create_oval(o.x - r, o.y - r, o.x + r, o.y + r, fill='', outline='green'))
-    #
-    # circle.append(canvas.create_oval(o.x - 3, o.y - 3, o.x + 3, o.y + 3, fill="green"))
-    # o_coords = Point(- canvas_width / 2 + o.x, canvas_height / 2 - o.y, None)
-    # circle.append(canvas.create_oval(o.x - 4, o.y - 4, o.x + 4, o.y + 4, fill="green"))
-    # circle.append(canvas.create_text(o.x + 10, o.y - 10, text=f"({o_coords.x:.3f}, {o_coords.y:.3f})", anchor=tk.W))
-
-    scale_to_fit_bbox(p1, p2, p3, o)
-    # draw_triangle(p1, p2, p3, o)
+    # scale_shapes(p1, p2, p3, center, 0.5)
+    # print(20*"-")
+    # scale_shapes(p1, p2, p3, center, 1)
+    # print(20*"-")
+    # scale_shapes(p1, p2, p3, center, 2)
+    # print(20*"-")
+    scale_shapes(p1, p2, p3, center, 3)
 
     display_message(f"Result: minimal diff is {min_diff}: points in triangle - {p_in}, out of - {p_out}\n"
                     f"Triangle is based on points №{p1.num}, {p2.num}, {p3.num}", "black")
+
+
+def get_width(a, b, c, o):
+    # можно вычислить минимальные и максимальные значения координат
+    x_min = min(a.x, b.x, c.x)
+    x_max = max(a.x, b.x, c.x)
+
+    # ширина фигуры
+    width = x_max - x_min
+
+    print("width", width)
+    return width
+
+
+def get_height(a, b, c, o):
+    # можно вычислить минимальные и максимальные значения координат
+    y_min = min(a.y, b.y, c.y)
+    y_max = max(a.y, b.y, c.y)
+
+    # высота фигуры
+    height = y_max - y_min
+
+    print("height", height)
+    return height
+
+
+def scale_shapes(a, b, c, o, scale_factor):
+    canvas.delete("all")
+    scale_factor_x = (canvas_width - padding) / get_width(a, b, c, o)
+    scale_factor_y = (canvas_height - padding) / get_height(a, b, c, o)
+    # scale_factor = 2  # min(scale_factor_x, scale_factor_y)
+    print("scale_factor", scale_factor)
+
+    # рисуем треугольник
+    triangle = canvas.create_polygon(a.x, canvas_height - a.y, b.x, canvas_height - b.y, c.x, canvas_height - c.y, fill="", outline="blue", tags="triangle")
+
+    radius = get_circle_radius(a, b, c)
+
+    # рисуем окружность
+    x0 = (o.x - radius) * scale_factor
+    y0 = canvas_height - (o.y - radius) * scale_factor
+    x1 = (o.x + radius) * scale_factor
+    y1 = canvas_height - (o.y + radius) * scale_factor
+    circle = canvas.create_oval(x0, y0, x1, y1, outline="red", tags="circle")
+    print(f"circle: ({x0}, {y0}) ({x1}, {y1})")
+
+    # получаем координаты всех фигур на холсте
+    coords_triangle = canvas.coords(triangle)
+    coords_circle = canvas.coords(circle)
+
+    # находим центр холста
+    center_x = canvas.winfo_width() / 2
+    center_y = canvas.winfo_height() / 2
+
+    # масштабируем координаты треугольника
+    new_coords_triangle = []
+    for i in range(0, len(coords_triangle), 2):
+        x = (coords_triangle[i] - center_x) / scale_factor + center_x
+        y = (coords_triangle[i+1] - center_y) / scale_factor + center_y
+        new_coords_triangle.extend([x, y])
+    canvas.coords(triangle, *new_coords_triangle)
+    print("triangle coords:", *new_coords_triangle)
+
+    # масштабируем координаты окружности
+    new_coords_circle = []
+    for i in range(0, len(coords_circle), 2):
+        x = (coords_circle[i] - center_x) / scale_factor + center_x
+        y = (coords_circle[i+1] - center_y) / scale_factor + center_y
+        new_coords_circle.extend([x, y])
+    canvas.coords(circle, *new_coords_circle)
+    print("circle coords:", *new_coords_circle)
+
+    # масштабируем холст
+    canvas.scale("all", center_x, center_y, scale_factor, scale_factor)
 
 
 def draw_grid(step):
@@ -155,147 +188,8 @@ def draw_grid(step):
         canvas.create_line(0, i, canvas_width, i, fill="lightgray", tags="gridline")
 
 
-def draw_canvas():
-    draw_grid(10)
-
-    # Draw the origin
-    # canvas.create_text(canvas_width / 2 + 5, canvas_height / 2 + 10, text="(0, 0)", anchor=tk.W)
-
-    # # Draw the x and y axis ticks
-    # for x in range(0, canvas_width - 1, 50):
-    #     if not x or abs(x) == canvas_width:
-    #         continue
-    #     canvas.create_line(x, canvas_height - 5, x, canvas_height, width=1)
-    #     canvas.create_text(x, canvas_height - 20, text=str(x - canvas_width / 2), anchor='n')
-    #
-    # for y in range(0, canvas_height - 1, 50):
-    #     if not y or abs(y) == canvas_height:
-    #         continue
-    #     canvas.create_line(-5, y, 5, y, width=1)
-    #     canvas.create_text(10, y, text=str(canvas_height / 2 - y), anchor='w')
-
-    # # Label the x and y axis
-    # canvas.create_text(canvas_width - 3, canvas_height - 15, text='X', anchor='e')
-    # canvas.create_text(15, 10, text='Y', anchor='w')
-    #
-    # # draw X axis
-    # canvas.create_line(3, canvas_height - 3, canvas_width, canvas_height - 3, arrow=tk.LAST, fill='black')
-    #
-    # # draw Y axis
-    # canvas.create_line(5, canvas_height, 5, 5, arrow=tk.LAST, fill='black')
-
-    # draw black border around canvas
-    # canvas.create_rectangle(2, 2, canvas_width, canvas_height, outline='black')
 
 
-def scale_to_fit_bbox(a, b, c, center):
-    # определяем bbox
-    rad = get_circle_radius(a, b, c)
-    bbox = (center.x - rad, center.y - rad, center.x + rad, center.y + rad)
-
-    # получаем размеры bbox
-    bbox_width = canvas_width - padding * 2
-    bbox_height = canvas_height - padding * 2
-
-    # определяем масштаб, необходимый для изменения размера графика
-    scale = min(canvas_width / bbox_width, canvas_height / bbox_height)
-
-    # определяем координаты центра bbox
-    center_x = center.x
-    center_y = center.y
-
-    # применяем масштабирование и перемещение координат
-    ap = copy(a)
-    bp = copy(b)
-    cp = copy(c)
-    cc = copy(center)
-
-    for point in [ap, bp, cp, cc]:
-        point.x = (point.x - center_x) * scale + canvas_width / 2
-        point.y = (point.y - center_y) * scale + canvas_height / 2
-
-    # проверяем, выходит ли окружность за пределы графика
-    max_radius = min(canvas_width, canvas_height) / 2
-    if get_circle_radius(ap, bp, cp) > max_radius:
-        # масштабируем график так, чтобы радиус окружности был равен максимально возможному значению в пределах графика
-        scale = max_radius / get_circle_radius(ap, bp, cp)
-
-    # перерисовываем график
-    circle.append(canvas.create_oval(cc.x - scale * get_circle_radius(ap, bp, cp),
-                                     cc.y - scale * get_circle_radius(ap, bp, cp),
-                                     cc.x + scale * get_circle_radius(ap, bp, cp),
-                                     cc.y + scale * get_circle_radius(ap, bp, cp),
-                                     outline="green"))
-
-    circle.append(canvas.create_line(scale * ap.x, scale * ap.y, scale * bp.x, scale * bp.y))
-    circle.append(canvas.create_line(scale * bp.x, scale * bp.y, scale * cp.x, scale * cp.y))
-    circle.append(canvas.create_line(scale * cp.x, cp.y, ap.x, ap.y))
-    circle.append(canvas.create_oval(ap.x - 3, ap.y - 3, ap.x + 3, ap.y + 3, fill="green"))
-    circle.append(canvas.create_oval(bp.x - 3, bp.y - 3, bp.x + 3, bp.y + 3, fill="green"))
-    circle.append(canvas.create_oval(cp.x - 3, cp.y - 3, cp.x + 3, cp.y + 3, fill="green"))
-    circle.append(canvas.create_oval(cc.x - 3, cc.y - 3, cc.x + 3, cc.y + 3, fill="blue"))
-
-    o_coords = Point(- canvas_width / 2 + cc.x, canvas_height / 2 - cc.y, None)
-    circle.append(canvas.create_oval(cc.x - 4, cc.y - 4, cc.x + 4, cc.y + 4, fill="green"))
-    circle.append(canvas.create_text(cc.x + 10, cc.y - 10, text=f"({center.x:.3f}, {center.y:.3f})", anchor=tk.W))
-
-    canvas.create_rectangle(bbox[0], bbox[1], bbox[2], bbox[3],
-                            outline='red')
-
-
-def draw_triangle(a, b, c, center):
-    # определяем bbox
-    rad = get_circle_radius(a, b, c)
-    bbox = (0, 0, center.x + rad, center.y + rad)
-
-    # получаем размеры bbox
-    bbox_width = bbox[2]
-    bbox_height = bbox[3]
-
-    # определяем координаты центра bbox
-    bbox_center_x = bbox_width / 2
-    bbox_center_y = bbox_height / 2
-
-    # определяем размеры и координаты центра окружности относительно bbox
-    circle_center_x = center.x - bbox[0]
-    circle_center_y = center.y - bbox[1]
-    circle_radius = get_circle_radius(a, b, c)
-
-    # определяем размеры и координаты вершин треугольника относительно bbox
-    triangle_points = [a, b, c]
-    triangle_points_x = [(p.x - bbox[0]) for p in triangle_points]
-    triangle_points_y = [(p.y - bbox[1]) for p in triangle_points]
-
-    # определяем масштаб, необходимый для изменения размера окружности и треугольника
-    scale = min(canvas_width / bbox_width, canvas_height / bbox_height)
-
-    # применяем масштаб и сдвиг координат, чтобы переместить окружность и треугольник в центр графика
-    circle_center_x = circle_center_x * scale + (canvas_width / 2 - bbox_center_x * scale)
-    circle_center_y = circle_center_y * scale + (canvas_height / 2 - bbox_center_y * scale)
-    circle_radius *= scale
-    triangle_points_x = [x * scale + (canvas_width / 2 - bbox_center_x * scale) for x in triangle_points_x]
-    triangle_points_y = [y * scale + (canvas_height / 2 - bbox_center_y * scale) for y in triangle_points_y]
-
-    # перерисовываем окружность
-    rad = get_circle_radius(a, b, c)
-    circle_center = center
-    if circle_center.x - rad < 0:
-        circle_center.x = rad
-    if circle_center.y - rad < 0:
-        circle_center.y = rad
-    if circle_center.x + rad > bbox[2]:
-        circle_center.x = bbox[2] - rad
-    if circle_center.y + rad > bbox[3]:
-        circle_center.y = bbox[3] - rad
-
-    circle.append(canvas.create_oval(circle_center.x - rad,
-                                     circle_center.y - rad,
-                                     circle_center.x + rad,
-                                     circle_center.y + rad,
-                                     outline="green"))
-
-    canvas.create_rectangle(bbox[0], bbox[1], bbox[2], bbox[3],
-                            outline='red')
 
 root = tk.Tk()
 root.title("Задача о нахождении оптимального треугольника")
@@ -316,8 +210,6 @@ label.pack(side="bottom", anchor="w")
 
 canvas = tk.Canvas(root, width=canvas_width, height=canvas_height, bg='white')
 canvas.pack(side="right", padx=20)
-
-draw_canvas()
 
 frame = tk.Frame(root)
 frame.pack(side="right", fill="both", expand=False)
@@ -352,10 +244,10 @@ solve_button.pack(side='top')
 points.append(Point(0, 100, 1))
 listbox.insert(tk.END, f"Point {1}: ({0}, {100})")
 
-points.append(Point(100, 500, 2))
-listbox.insert(tk.END, f"Point {2}: ({100}, {500})")
+points.append(Point(100, 200, 2))
+listbox.insert(tk.END, f"Point {2}: ({100}, {200})")
 
-points.append(Point(100, -50, 3))
-listbox.insert(tk.END, f"Point {3}: ({100}, {-50})")
+points.append(Point(100, 0, 3))
+listbox.insert(tk.END, f"Point {3}: ({100}, {0})")
 
 root.mainloop()
