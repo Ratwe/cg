@@ -1,22 +1,23 @@
 import tkinter as tk
 import random
-from copy import copy
 
 from numpy import sqrt
 
 from main import get_min_difference, Point, get_circle_center, get_circle_radius
+
+EPS = 1e-8
 
 canvas_width = 600
 canvas_height = 600
 coords_range = 1000  # min(canvas_height, canvas_width)
 padding = 0
 
+point_coord = []
+new_point_coord = []
 points = []
-o_text = []
-o_centre = []
-r = canvas_width / 2
+triangle_points = [-1, -1, -1]
 tk_width = 15
-pnum = 4
+pnum = 3
 
 
 def display_message(message, color):
@@ -34,12 +35,17 @@ def add_random_point():
     display_message("Point {} added: ({}, {})".format(pnum, x, y), "green")
     listbox.insert(tk.END, f"Point {pnum}: ({x}, {y})")
 
-    x = canvas_width / 2 + x
-    y = canvas_height / 2 - y
     points.append(Point(x, y, pnum))
     # canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
 
     pnum += 1
+
+
+def print_points():
+    count = 0
+    for i in point_coord:
+        count += 1
+        print(f"{count}: ({i[0]}, {i[1]})")
 
 
 def add_point():
@@ -52,8 +58,6 @@ def add_point():
             display_message("Point {} added: ({}, {})".format(pnum, x, y), "green")
             listbox.insert(tk.END, f"Point {pnum}: ({x}, {y})")
 
-            x = canvas_width / 2 + x
-            y = canvas_height / 2 - y
             points.append(Point(x, y, pnum))
             # canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
             pnum += 1
@@ -82,8 +86,16 @@ def delete_point():
             canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
 
 
+def tranc_coord(y):
+    return (-1) * y + canvas_height
+
+
+def tranc_coord_back(y):
+    return canvas_height - y
+
+
 def solve():
-    if len(points) < 3:
+    if len(points) <= 2:
         display_message("Error: There must be at least three points", "red")
         return
 
@@ -95,90 +107,168 @@ def solve():
     center = get_circle_center(p1, p2, p3)
     print(f"center: ({center.x}, {center.y})")
 
-    # scale_shapes(p1, p2, p3, center, 0.5)
-    # print(20*"-")
-    # scale_shapes(p1, p2, p3, center, 1)
-    # print(20*"-")
-    # scale_shapes(p1, p2, p3, center, 2)
-    # print(20*"-")
-    scale_shapes(p1, p2, p3, center, 3)
+    global point_coord
+    point_coord = [[point.x, point.y] for point in points]
+    print_points()
+
+    search_coef_scaling()
+    build_points(p1, p2, p3)
+    # build_triangle(p1, p2, p3, res_points)
 
     display_message(f"Result: minimal diff is {min_diff}: points in triangle - {p_in}, out of - {p_out}\n"
                     f"Triangle is based on points №{p1.num}, {p2.num}, {p3.num}", "black")
 
 
-def get_width(a, b, c, o):
-    # можно вычислить минимальные и максимальные значения координат
-    x_min = min(a.x, b.x, c.x)
-    x_max = max(a.x, b.x, c.x)
-
-    # ширина фигуры
-    width = x_max - x_min
-
-    print("width", width)
-    return width
-
-
-def get_height(a, b, c, o):
-    # можно вычислить минимальные и максимальные значения координат
-    y_min = min(a.y, b.y, c.y)
-    y_max = max(a.y, b.y, c.y)
-
-    # высота фигуры
-    height = y_max - y_min
-
-    print("height", height)
-    return height
-
-
-def scale_shapes(a, b, c, o, scale_factor):
+def build_triangle(p1, p2, p3, res_points):
+    build_points(p1, p2, p3)
     canvas.delete("all")
-    scale_factor_x = (canvas_width - padding) / get_width(a, b, c, o)
-    scale_factor_y = (canvas_height - padding) / get_height(a, b, c, o)
-    # scale_factor = 2  # min(scale_factor_x, scale_factor_y)
-    print("scale_factor", scale_factor)
 
-    # рисуем треугольник
-    triangle = canvas.create_polygon(a.x, canvas_height - a.y, b.x, canvas_height - b.y, c.x, canvas_height - c.y, fill="", outline="blue", tags="triangle")
+    res_triangle = [new_point_coord[res_points[0]], new_point_coord[res_points[1]], new_point_coord[res_points[2]]]
 
-    radius = get_circle_radius(a, b, c)
+    o = get_circle_center(p1, p2, p3)
+    k_x, k_y, x_min, y_min = search_coef_scaling()
+    R = get_circle_radius(p1, p2, p3) * k_y
+    print(f"R = {R}")
 
-    # рисуем окружность
-    x0 = (o.x - radius) * scale_factor
-    y0 = canvas_height - (o.y - radius) * scale_factor
-    x1 = (o.x + radius) * scale_factor
-    y1 = canvas_height - (o.y + radius) * scale_factor
-    circle = canvas.create_oval(x0, y0, x1, y1, outline="red", tags="circle")
-    print(f"circle: ({x0}, {y0}) ({x1}, {y1})")
+    if R > 4:
+        R -= 4
 
-    # получаем координаты всех фигур на холсте
-    coords_triangle = canvas.coords(triangle)
-    coords_circle = canvas.coords(circle)
+    min_y = min(res_triangle[0][1], res_triangle[1][1], res_triangle[2][1])
+    max_y = max(res_triangle[0][1], res_triangle[1][1], res_triangle[2][1])
 
-    # находим центр холста
-    center_x = canvas.winfo_width() / 2
-    center_y = canvas.winfo_height() / 2
+    for i in range(pnum):
+        x = new_point_coord[i][0]
+        y = new_point_coord[i][1]
+        r = 3.5
+        canvas.create_oval(x - r, y - r, x + r, y + r,
+                           width=1, outline="red", fill="red")
 
-    # масштабируем координаты треугольника
-    new_coords_triangle = []
-    for i in range(0, len(coords_triangle), 2):
-        x = (coords_triangle[i] - center_x) / scale_factor + center_x
-        y = (coords_triangle[i+1] - center_y) / scale_factor + center_y
-        new_coords_triangle.extend([x, y])
-    canvas.coords(triangle, *new_coords_triangle)
-    print("triangle coords:", *new_coords_triangle)
+        triangle_points = [[p1.x, p1.y], [p2.x, p2.y], [p3.x, p3.y]]
 
-    # масштабируем координаты окружности
-    new_coords_circle = []
-    for i in range(0, len(coords_circle), 2):
-        x = (coords_circle[i] - center_x) / scale_factor + center_x
-        y = (coords_circle[i+1] - center_y) / scale_factor + center_y
-        new_coords_circle.extend([x, y])
-    canvas.coords(circle, *new_coords_circle)
-    print("circle coords:", *new_coords_circle)
+        for j in range(len(triangle_points)):
+            if i != triangle_points[j] and j == len(triangle_points) - 1:
+                canvas.create_text(x, y - 15,
+                                   text="%d [%.1f,%.1f]" % (
+                                   i + 1, point_coord[i][0], tranc_coord_back(point_coord[i][1])),
+                                   font=("Courier New", 8, "bold"), fill="darkmagenta")
 
-    # масштабируем холст
-    canvas.scale("all", center_x, center_y, scale_factor, scale_factor)
+            elif i == triangle_points[j]:
+                if abs(y - min_y) < EPS:
+                    canvas.create_text(x, y - 15,
+                                       text="%d [%.1f,%.1f]" % (
+                                       i + 1, point_coord[i][0], tranc_coord_back(point_coord[i][1])),
+                                       font=("Courier New", 8, "bold"), fill="darkmagenta")
+
+                elif abs(y - max_y) < EPS:
+                    canvas.create_text(x, y + 15,
+                                       text="%d [%.1f,%.1f]" % (
+                                       i + 1, point_coord[i][0], tranc_coord_back(point_coord[i][1])),
+                                       font=("Courier New", 8, "bold"), fill="darkmagenta")
+
+                else:
+                    res_triangle.pop(j)
+                    res_triangle.sort(key=lambda array: array[1])
+
+                    x_min_y = res_triangle[0][0]
+                    x_max_y = res_triangle[1][0]
+
+                    if abs(x - x_min_y) > abs(x - x_max_y):
+                        canvas.create_text(x, y - 15,
+                                           text="%d [%.1f,%.1f]" % (
+                                           i + 1, point_coord[i][0], tranc_coord_back(point_coord[i][1])),
+                                           font=("Courier New", 16, "bold"), fill="darkmagenta")
+                    else:
+                        canvas.create_text(x, y + 15,
+                                           text="%d [%.1f,%.1f]" % (
+                                           i + 1, point_coord[i][0], tranc_coord_back(point_coord[i][1])),
+                                           font=("Courier New", 16, "bold"), fill="darkmagenta")
+                break
+
+
+def search_coef_scaling():
+    x_min = point_coord[0][0]
+    y_min = point_coord[0][1]
+
+    x_max = point_coord[0][0]
+    y_max = point_coord[0][1]
+
+    for i in point_coord:
+        x_min = min(i[0], x_min)
+        y_min = max(i[1], y_min)
+
+        x_max = max(i[0], x_max)
+        y_max = min(i[1], y_max)
+
+    y_min = tranc_coord_back(y_min)
+    y_max = tranc_coord_back(y_max)
+
+    if x_max != x_min:
+        k_x = (0.8 * canvas_width) / (x_max - x_min)
+    else:
+        k_x = 0
+
+    if y_max != y_min:
+        k_y = (0.8 * canvas_height) / (y_max - y_min)
+    else:
+        k_y = 0
+
+    print(f"k_x = {k_x}")
+    print(f"k_y = {k_y}")
+
+    return k_x, k_y, x_min, y_min
+
+
+def build_points(p1, p2, p3):
+    point_coord.clear()
+    new_point_coord.clear()
+    canvas.delete("all")
+
+    for i in range(0, pnum):
+        x, y = points[i].x, points[i].y
+
+        y = tranc_coord(y)
+        point_coord.append([x, y])
+
+    k_x, k_y, x_min, y_min = search_coef_scaling()
+
+    if k_x != 0 and k_y != 0:
+        indent_x = 0.1 * canvas_width
+        indent_y = 0.1 * canvas_height
+
+        k_x = min(k_x, k_y)
+        k_y = k_x
+
+    elif k_x == 0 and k_y != 0:
+        indent_x = 0.5 * canvas_width
+        indent_y = 0.1 * canvas_height
+    elif k_x != 0 and k_y == 0:
+        indent_x = 0.1 * canvas_width
+        indent_y = 0.5 * canvas_height
+    else:
+        indent_x = 0.5 * canvas_width
+        indent_y = 0.5 * canvas_height
+
+    for i in range(pnum):
+        x = (point_coord[i][0] - x_min) * k_x + indent_x
+        y = tranc_coord((tranc_coord_back(point_coord[i][1]) - y_min) * k_y + indent_y)
+        new_point_coord.append([x, y])
+
+        r = 3.5
+        canvas.create_oval(x - r, y - r, x + r, y + r,
+                           width=1, outline="red", fill="red")
+
+        canvas.create_text(x, y - 15,
+                           text="%d [%.1f,%.1f]" % (i + 1, point_coord[i][0], tranc_coord_back(point_coord[i][1])),
+                           font=("Courier New", 8, "bold"), fill="darkmagenta")
+
+    o = get_circle_center(p1, p2, p3)
+    x = (o.x - x_min) * k_x + indent_x
+    y = tranc_coord((o.y - y_min) * k_y + indent_y)
+
+    r = get_circle_radius(p1, p2, p3) * k_y
+    canvas.create_oval(x - r, y - r, x + r, y + r, width=1, outline="red")
+
+    print(f"circle: ({x}, {y}), r = {r}")
 
 
 def draw_grid(step):
@@ -186,9 +276,6 @@ def draw_grid(step):
         canvas.create_line(i, 0, i, canvas_height, fill="lightgray", tags="gridline")
     for i in range(0, canvas_height, step):
         canvas.create_line(0, i, canvas_width, i, fill="lightgray", tags="gridline")
-
-
-
 
 
 root = tk.Tk()
