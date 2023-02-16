@@ -4,6 +4,7 @@ import random
 from main import get_min_difference, Point, get_circle_center, get_circle_radius
 
 EPS = 1e-8
+SOLVE_FLAG = 0
 
 canvas_width = 600
 canvas_height = 600
@@ -15,9 +16,10 @@ new_point_coord = []
 points = []
 triangle_points = [-1, -1, -1]
 tk_width = 15
-pnum = 4
+pnum = 1
 
 
+# функция для вывода сообщения в поле сообщений
 def display_message(message, color):
     message_box.config(state='normal', fg=color)
     message_box.delete("1.0", "end")
@@ -25,6 +27,7 @@ def display_message(message, color):
     message_box.config(state='disabled')
 
 
+# функция для добавления случайной точки
 def add_random_point():
     global pnum, coords_range
     x = float(random.randint(- int(coords_range), int(coords_range)))
@@ -37,8 +40,12 @@ def add_random_point():
     # canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
 
     pnum += 1
-    solve()
 
+    if SOLVE_FLAG:
+        solve()
+
+
+# функция для вывода всех добавленных точек в консоль
 def print_points():
     count = 0
     for i in point_coord:
@@ -46,6 +53,7 @@ def print_points():
         print(f"{count}: ({i[0]}, {i[1]})")
 
 
+# функция для добавления точки, введенной пользователем в поля ввода
 def add_point():
     try:
         x = float(x_entry.get())
@@ -58,74 +66,96 @@ def add_point():
         points.append(Point(x, y, pnum))
         # canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="black")
 
+        pnum += 1
+
+        if SOLVE_FLAG:
+            solve()
+
     except ValueError:
         display_message("Error: Invalid input, must be a number", "red")
 
 
+# функция для удаления выбранной точки
 def delete_point():
     selected = listbox.curselection()
 
-    if selected:
-        index = selected[0]
-        display_message(
-            f"Point {points[index].num} ({- canvas_width / 2 + points[index].x}, {canvas_height / 2 - points[index].y}) removed", "green")
-        listbox.delete(index)
-        del points[index]
+    if not selected:
+        display_message("Please select a point to delete", "red")
+        return
 
-    solve()
+    index = selected[0]
+    display_message(
+        f"Point {points[index].num} ({- canvas_width / 2 + points[index].x}, {canvas_height / 2 - points[index].y}) removed",
+        "green")
+    listbox.delete(index)
+    del points[index]
+
+    if SOLVE_FLAG:
+        solve()
 
 
+# функция для трансформации координат точек в соответствии с размером холста
 def tranc_coord(y):
     return (-1) * y + canvas_height
 
 
+# функция для трансформации координат точек обратно в исходный вид
 def tranc_coord_back(y):
     return canvas_height - y
 
 
+# Функция решения задачи
 def solve():
+    # Очищаем холст
+    canvas.delete("all")
+
+    # Проверяем, что количество точек не меньше трех
     if len(points) < 3:
         display_message("Error: There must be at least three points", "red")
         return
 
+    # Получаем минимальное расстояние между точками, точки внутри треугольника и вне его
     min_diff, res_points, p_in, p_out = get_min_difference(points)
 
+    # Получаем точки, образующие треугольник
     p1 = points[res_points[0]]
     p2 = points[res_points[1]]
     p3 = points[res_points[2]]
+
+    # Получаем центр окружности, проходящей через эти точки
     center = get_circle_center(p1, p2, p3)
+    if center is None:
+        display_message("Impossible to calculate center. Are there three point at on line?", "red")
+        return
     print(f"center: ({center.x}, {center.y})")
 
+    # Получаем координаты всех точек
     global point_coord
-    point_coord = [[point.x, point.y] for point in points]
-    # print_points()
+    point_coord = [[point.x, point.y, point.num] for point in points]
     print(f"point_coord = {point_coord}")
 
-    search_coef_scaling(p1, p2, p3)
-    # build_points(p1, p2, p3)
+    # Строим треугольник на холсте
     build_triangle(p1, p2, p3, res_points)
 
+    # Выводим результат на экран
     display_message(f"Result: minimal diff is {min_diff}: points in triangle - {p_in}, out of - {p_out}\n"
                     f"Triangle is based on points №{p1.num}, {p2.num}, {p3.num}", "black")
 
 
+# Функция для построения треугольника на холсте
 def build_triangle(p1, p2, p3, res_points):
-    canvas.delete("all")
-    build_points(p1, p2, p3)
+    # Строим точки и окружность
+    build_points_circle(p1, p2, p3)
 
+    # Получаем координаты точек, образующих треугольник
     res_triangle = [new_point_coord[res_points[0]], new_point_coord[res_points[1]], new_point_coord[res_points[2]]]
 
+    # Строим линии треугольника
     canvas.create_line(res_triangle[0], res_triangle[1], width=2, fill="green")
     canvas.create_line(res_triangle[1], res_triangle[2], width=2, fill="green")
     canvas.create_line(res_triangle[0], res_triangle[2], width=2, fill="green")
 
-    k_x, k_y, x_min, y_min = search_coef_scaling(p1, p2, p3)
-    R = get_circle_radius(p1, p2, p3) * k_y
-    print(f"R = {R}")
-
-    if R > 4:
-        R -= 4
-
+    # Получаем координаты самой верхней и самой нижней точки
     min_y = min(res_triangle[0][1], res_triangle[1][1], res_triangle[2][1])
     max_y = max(res_triangle[0][1], res_triangle[1][1], res_triangle[2][1])
 
@@ -142,20 +172,20 @@ def build_triangle(p1, p2, p3, res_points):
             if i != triangle_points[j] and j == len(triangle_points) - 1:
                 canvas.create_text(x, y - 15,
                                    text="%d [%.1f,%.1f]" % (
-                                       i + 1, point_coord[i][0], tranc_coord_back(point_coord[i][1])),
+                                       point_coord[i][2], point_coord[i][0], tranc_coord_back(point_coord[i][1])),
                                    font=("Courier New", 8, "bold"), fill="black")
 
             elif i == triangle_points[j]:
                 if abs(y - min_y) < EPS:
                     canvas.create_text(x, y - 15,
                                        text="%d [%.1f,%.1f]" % (
-                                           i + 1, point_coord[i][0], tranc_coord_back(point_coord[i][1])),
+                                           point_coord[i][2], point_coord[i][0], tranc_coord_back(point_coord[i][1])),
                                        font=("Courier New", 8, "bold"), fill="black")
 
                 elif abs(y - max_y) < EPS:
                     canvas.create_text(x, y + 15,
                                        text="%d [%.1f,%.1f]" % (
-                                           i + 1, point_coord[i][0], tranc_coord_back(point_coord[i][1])),
+                                           point_coord[i][2], point_coord[i][0], tranc_coord_back(point_coord[i][1])),
                                        font=("Courier New", 8, "bold"), fill="black")
 
                 else:
@@ -168,12 +198,12 @@ def build_triangle(p1, p2, p3, res_points):
                     if abs(x - x_min_y) > abs(x - x_max_y):
                         canvas.create_text(x, y - 15,
                                            text="%d [%.1f,%.1f]" % (
-                                               i + 1, point_coord[i][0], tranc_coord_back(point_coord[i][1])),
+                                               point_coord[i][2], point_coord[i][0], tranc_coord_back(point_coord[i][1])),
                                            font=("Courier New", 16, "bold"), fill="black")
                     else:
                         canvas.create_text(x, y + 15,
                                            text="%d [%.1f,%.1f]" % (
-                                               i + 1, point_coord[i][0], tranc_coord_back(point_coord[i][1])),
+                                               point_coord[i][2], point_coord[i][0], tranc_coord_back(point_coord[i][1])),
                                            font=("Courier New", 16, "bold"), fill="black")
                 break
 
@@ -224,21 +254,24 @@ def search_coef_scaling(p1, p2, p3):
     return k_x, k_y, x_min, y_min
 
 
-def build_points(p1, p2, p3):
+def build_points_circle(p1, p2, p3):
     n = len(point_coord)
     point_coord.clear()
     new_point_coord.clear()
     canvas.delete("all")
 
     for i in range(0, n):
-        x, y = points[i].x, points[i].y
+        x, y, num = points[i].x, points[i].y, points[i].num
 
         y = tranc_coord(y)
-        point_coord.append([x, y])
+        point_coord.append([x, y, num])
 
     k_x, k_y, x_min, y_min = search_coef_scaling(p1, p2, p3)
 
-    draw_grid(int(10 * k_x))
+    # try:
+    #     draw_grid(int(10 * k_x))
+    # except:
+    #     pass
 
     if k_x != 0 and k_y != 0:
         indent_x = 0.1 * canvas_width
@@ -267,7 +300,7 @@ def build_points(p1, p2, p3):
                            width=1, fill="black")
 
         canvas.create_text(x, y - 15,
-                           text="%d [%.1f,%.1f]" % (i + 1, point_coord[i][0], tranc_coord_back(point_coord[i][1])),
+                           text="%d [%.1f,%.1f]" % (point_coord[i][2], point_coord[i][0], tranc_coord_back(point_coord[i][1])),
                            font=("Courier New", 8, "bold"), fill="black")
 
     o = get_circle_center(p1, p2, p3)
@@ -304,12 +337,18 @@ def modify_point():
 
     # обновляем строку в listbox
     listbox.delete(index)
-    listbox.insert(index, f"Point {index+1}: ({x}, {y})")
+    listbox.insert(index, f"Point {index + 1}: ({x}, {y})")
     canvas.delete("all")
-    solve()
+
+    if SOLVE_FLAG:
+        solve()
 
 
 def draw_grid(step):
+    for i in range(0, canvas_width, step):
+        canvas.create_line(i, 0, i, canvas_height, fill="lightgray", tags="gridline")
+    for i in range(0, canvas_height, step):
+        canvas.create_line(0, i, canvas_width, i, fill="lightgray", tags="gridline")
     for i in range(0, canvas_width, step):
         canvas.create_line(i, 0, i, canvas_height, fill="lightgray", tags="gridline")
     for i in range(0, canvas_height, step):
@@ -369,13 +408,15 @@ delete_button.pack(side='top')
 solve_button = tk.Button(root, text="Solve", command=solve, width=tk_width)
 solve_button.pack(side='top')
 
-points.append(Point(0, 100, 1))
-listbox.insert(tk.END, f"Point {1}: ({0}, {100})")
-
-points.append(Point(100, 200, 2))
-listbox.insert(tk.END, f"Point {2}: ({100}, {200})")
-
-points.append(Point(100, 0, 3))
-listbox.insert(tk.END, f"Point {3}: ({100}, {0})")
+# points.append(Point(0, 100, 1))
+# listbox.insert(tk.END, f"Point {1}: ({0}, {100})")
+#
+# points.append(Point(100, 200, 2))
+# listbox.insert(tk.END, f"Point {2}: ({100}, {200})")
+#
+# points.append(Point(100, 0, 3))
+# listbox.insert(tk.END, f"Point {3}: ({100}, {0})")
+# 
+# pnum = 4
 
 root.mainloop()

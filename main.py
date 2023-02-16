@@ -1,4 +1,3 @@
-import random
 from typing import List
 import math
 
@@ -12,6 +11,7 @@ class Point:
         self.num = num
 
 
+# Функция, определяющая, находится ли точка внутри описанной окружности треугольника
 def is_point_in_circle(point: Point, triangle: List[Point]):
     a = triangle[0]
     b = triangle[1]
@@ -20,23 +20,36 @@ def is_point_in_circle(point: Point, triangle: List[Point]):
     if center is None:
         return None
     radius = get_circle_radius(a, b, c)
-    return math.sqrt((point.x - center.x) ** 2 + (point.y - center.y) ** 2) < radius
+    return math.sqrt((point.x - center.x) ** 2 + (point.y - center.y) ** 2) <= radius
 
 
+# Функция, находящая центр описанной окружности треугольника
+# Формула для нахождения координат центра описанной окружности треугольника через координаты вершин треугольника
 def get_circle_center(a: Point, b: Point, c: Point):
-    d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y))
-    if d == 0:
+    x1, y1 = a.x, a.y
+    x2, y2 = b.x, b.y
+    x3, y3 = c.x, c.y
+
+    denominator = 2 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
+    if denominator == 0:
         return None
-    x = ((a.x ** 2 + a.y ** 2) * (b.y - c.y) + (b.x ** 2 + b.y ** 2) * (c.y - a.y) + (c.x ** 2 + c.y ** 2) * (
-            a.y - b.y)) / d
-    y = ((a.x ** 2 + a.y ** 2) * (c.x - b.x) + (b.x ** 2 + b.y ** 2) * (a.x - c.x) + (c.x ** 2 + c.y ** 2) * (
-            b.x - a.x)) / d
+    x = ((x1 ** 2 + y1 ** 2) * (y2 - y3) + (x2 ** 2 + y2 ** 2) * (y3 - y1) + (x3 ** 2 + y3 ** 2) * (
+                y1 - y2)) / denominator
+    y = ((x1 ** 2 + y1 ** 2) * (x3 - x2) + (x2 ** 2 + y2 ** 2) * (x1 - x3) + (x3 ** 2 + y3 ** 2) * (
+                x2 - x1)) / denominator
     return Point(x, y, None)
 
 
+# Функция, находящая радиус описанной окружности треугольника
 def get_circle_radius(a: Point, b: Point, c: Point):
     center = get_circle_center(a, b, c)
     return math.sqrt((center.x - a.x) ** 2 + (center.y - a.y) ** 2)
+
+
+def distance(p1, p2):
+    x1, y1 = p1.x, p1.y
+    x2, y2 = p2.x, p2.y
+    return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
 
 def is_point_in_triangle(point: Point, triangle: List[Point]):
@@ -46,13 +59,21 @@ def is_point_in_triangle(point: Point, triangle: List[Point]):
     x, y = point.x, point.y
 
     # Расчет площадей треугольников
-    a = fabs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2
-    b = fabs(x * (y2 - y3) + x2 * (y3 - y) + x3 * (y - y2)) / 2
-    c = fabs(x1 * (y - y3) + x * (y3 - y1) + x3 * (y1 - y)) / 2
-    d = fabs(x1 * (y2 - y) + x2 * (y - y1) + x * (y1 - y2)) / 2
+    a = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+    b = ((x3 - x2) ** 2 + (y3 - y2) ** 2) ** 0.5
+    c = ((x3 - x1) ** 2 + (y3 - y1) ** 2) ** 0.5
+    p = (a + b + c) / 2  # полупериметр
+    area = (p * (p - a) * (p - b) * (p - c)) ** 0.5
 
-    # Сравнение площадей
-    return a == b + c + d
+    # Определение, лежит ли точка внутри треугольника
+    a1 = ((x - x1) ** 2 + (y - y1) ** 2) ** 0.5
+    a2 = ((x - x2) ** 2 + (y - y2) ** 2) ** 0.5
+    a3 = ((x - x3) ** 2 + (y - y3) ** 2) ** 0.5
+    sum_of_areas = (
+        (p - a) * (p - b) * (p - c) - a * (p - a1) * (p - a3) - b * (p - a2) * (p - a1) - c * (p - a2) * (p - a3)
+    ) ** 0.5
+
+    return area == sum_of_areas
 
 
 def get_min_difference(points: List[Point]):
@@ -81,14 +102,3 @@ def get_min_difference(points: List[Point]):
                     p_out = count_in_circle
 
     return min_diff, res, p_in, p_out
-
-
-def generate_points(n):
-    points = []
-    pnum = 0
-    for i in range(n):
-        x = random.uniform(0, 10)
-        y = random.uniform(0, 10)
-        points.append(Point(x, y, pnum))
-    return points
-
