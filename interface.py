@@ -127,12 +127,12 @@ def solve():
     if center is None:
         display_message("Impossible to calculate center. Are there three point at on line?", "red")
         return
-    print(f"center: ({center.x}, {center.y})")
+    # print(f"center: ({center.x}, {center.y})")
 
     # Получаем координаты всех точек
     global point_coord
     point_coord = [[point.x, point.y, point.num] for point in points]
-    print(f"point_coord = {point_coord}")
+    # print(f"point_coord = {point_coord}")
 
     # Строим треугольник на холсте
     build_triangle(p1, p2, p3, res_points)
@@ -210,7 +210,7 @@ def build_triangle(p1, p2, p3, res_points):
 
 def search_coef_scaling(p1, p2, p3):
     global point_coord
-    print(f"point_coord = {point_coord}")
+    # print(f"point_coord = {point_coord}")
 
     x_min = point_coord[0][0]
     y_min = point_coord[0][1]
@@ -227,7 +227,7 @@ def search_coef_scaling(p1, p2, p3):
 
     o = get_circle_center(p1, p2, p3)
     r = get_circle_radius(p1, p2, p3)
-    print(f"r0 = {r}")
+    # print(f"r0 = {r}")
     x_min = min(x_min, o.x - r)
     x_max = max(x_max, o.x + r)
     y_min = max(y_min, tranc_coord(o.y) + r)
@@ -246,10 +246,10 @@ def search_coef_scaling(p1, p2, p3):
     else:
         k_y = 0
 
-    print(f"k_x = {k_x}")
-    print(f"k_y = {k_y}")
-    print(f"x_min = {x_min}")
-    print(f"y_min = {y_min}")
+    # print(f"k_x = {k_x}")
+    # print(f"k_y = {k_y}")
+    # print(f"x_min = {x_min}")
+    # print(f"y_min = {y_min}")
 
     return k_x, k_y, x_min, y_min
 
@@ -310,8 +310,8 @@ def build_points_circle(p1, p2, p3):
     r = get_circle_radius(p1, p2, p3) * k_y
     canvas.create_oval(x - r, y - r, x + r, y + r, width=2, outline="red")
 
-    print("point_coord build_point:", point_coord)
-    print(f"circle: ({x}, {y}), r = {r}")
+    # print("point_coord build_point:", point_coord)
+    # print(f"circle: ({x}, {y}), r = {r}")
 
 
 def modify_point():
@@ -408,15 +408,15 @@ delete_button.pack(side='top')
 solve_button = tk.Button(root, text="Solve", command=solve, width=tk_width)
 solve_button.pack(side='top')
 
-# points.append(Point(0, 100, 1))
-# listbox.insert(tk.END, f"Point {1}: ({0}, {100})")
-#
-# points.append(Point(100, 200, 2))
-# listbox.insert(tk.END, f"Point {2}: ({100}, {200})")
-#
-# points.append(Point(100, 0, 3))
-# listbox.insert(tk.END, f"Point {3}: ({100}, {0})")
-# 
-# pnum = 4
+points.append(Point(0, 100, 1))
+listbox.insert(tk.END, f"Point {1}: ({0}, {100})")
+
+points.append(Point(100, 200, 2))
+listbox.insert(tk.END, f"Point {2}: ({100}, {200})")
+
+points.append(Point(100, 0, 3))
+listbox.insert(tk.END, f"Point {3}: ({100}, {0})")
+
+pnum = 4
 
 root.mainloop()
