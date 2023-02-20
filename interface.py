@@ -430,23 +430,23 @@ figure_c = Label(root, text="Центр фигуры: (%3.2f;%3.2f)" % (x_all[0]
 figure_c.place(x=CV_WIDE + 1, y=850)
 
 # Center
-center_label = Label(root, text="Центр (для масштабирования и поворота)", font=("Arial", 14), bg=WIN_COLOR)
-center_label.place(x=CV_WIDE + 15, y=20)
+center_label = Label(root, text="Центр (относительный)", width=20, anchor='w', font=("Arial", 18), bg=TEXT_COLOR)
+center_label.place(x=CV_WIDE + 1, y=20)
 
 center_x_label = Label(root, text="X:", font=("Arial", 14), bg=WIN_COLOR)
-center_x_label.place(x=CV_WIDE + 70, y=50)
+center_x_label.place(x=CV_WIDE + 70, y=65)
 center_x = Entry(root, font=("Arial", 14), width=9)
 center_x.insert(END, "0")
-center_x.place(x=CV_WIDE + 100, y=50)
+center_x.place(x=CV_WIDE + 100, y=65)
 
 center_y_label = Label(root, text="Y:", font=("Arial", 14), bg=WIN_COLOR)
-center_y_label.place(x=CV_WIDE + 270, y=50)
+center_y_label.place(x=CV_WIDE + 270, y=65)
 center_y = Entry(root, font=("Arial", 14), width=9)
 center_y.insert(END, "0")
-center_y.place(x=CV_WIDE + 300, y=50)
+center_y.place(x=CV_WIDE + 300, y=65)
 
 # Spin
-spin_label = Label(root, text="Поворот", width=36, font=("Arial", 18), bg=TEXT_COLOR)
+spin_label = Label(root, text="Поворот", width=20, anchor='w', font=("Arial", 18), bg=TEXT_COLOR)
 spin_label.place(x=CV_WIDE + 1, y=110)
 
 spin_angle_label = Label(root, text="Угол°: ", font=("Arial", 14), bg=WIN_COLOR)
@@ -459,7 +459,7 @@ spin_btn = Button(root, text="Повернуть", font=("Arial", 14), command=p
 spin_btn.place(x=CV_WIDE + 160, y=200)
 
 # Scale
-scale_label = Label(root, text="Масштабирование", width=36, font=("Arial", 18), bg=TEXT_COLOR)
+scale_label = Label(root, text="Масштабирование", width=20, anchor='w', font=("Arial", 18), bg=TEXT_COLOR)
 scale_label.place(x=CV_WIDE + 1, y=300)
 
 scale_x_label = Label(root, text="kx: ", font=("Arial", 14), bg=WIN_COLOR)
@@ -479,7 +479,7 @@ scale_btn = Button(root, text="Масштабировать", font=("Arial", 14)
 scale_btn.place(x=CV_WIDE + 160, y=420)
 
 # Move
-move_label = Label(root, text="Перемещение", width=36, font=("Arial", 18), bg=TEXT_COLOR)
+move_label = Label(root, text="Перемещение", width=20, anchor='w', font=("Arial", 18), bg=TEXT_COLOR)
 move_label.place(x=CV_WIDE + 1, y=520)
 
 move_x_label = Label(root, text="Δx: ", font=("Arial", 14), bg=WIN_COLOR)
@@ -497,13 +497,13 @@ move_y.place(x=CV_WIDE + 310, y=580)
 move_btn = Button(root, text="Переместить", font=("Arial", 14), command=parse_move, width=15, height=2, bg=TEXT_COLOR)
 move_btn.place(x=CV_WIDE + 160, y=640)
 
-line = Label(root, text="", width=36, font=("Arial", 18), bg=TEXT_COLOR)
-line.place(x=CV_WIDE + 1, y=710)
+# line = Label(root, text="", width=36, font=("Arial", 18), bg=TEXT_COLOR)
+# line.place(x=CV_WIDE + 1, y=710)
 
 step_back = Button(root, text="Шаг назад", font=("Arial", 14), command=step_backing, width=15, height=2, bg=TEXT_COLOR)
-step_back.place(x=CV_WIDE + 25, y=760)
+step_back.place(x=CV_WIDE + 25, y=750)
 
 clear = Button(root, text="Сбросить", font=("Arial", 14), command=reset, width=15, height=2, bg=TEXT_COLOR)
-clear.place(x=CV_WIDE + 300, y=760)
+clear.place(x=CV_WIDE + 300, y=750)
 
 root.mainloop()
