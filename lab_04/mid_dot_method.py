@@ -17,13 +17,13 @@ def mid_dot_circle(canvas_win, dot_c, radius, color, draw):
 
     delta = 1 - radius
 
-    while (x <= y):
+    while x <= y:
         if draw:
             draw_dots_circle(canvas_win, [x_c, y_c], [x, y], color)
 
         x += 1
 
-        if (delta < 0):
+        if delta < 0:
             delta = delta + 2 * x + 1
         else:
             y -= 1
@@ -31,7 +31,7 @@ def mid_dot_circle(canvas_win, dot_c, radius, color, draw):
 
 
 def mid_dot_ellipse(canvas_win, dot_c, rad, color, draw):
-
+    # b^2 * x^2 + a^2 * y^2 - a^2 * b^2 = 0 = fprob
     x_c = dot_c[0]
     y_c = dot_c[1]
 
@@ -41,15 +41,17 @@ def mid_dot_ellipse(canvas_win, dot_c, rad, color, draw):
     r_a_2 = rad[0] * rad[0]
     r_b_2 = rad[1] * rad[1]
 
+    # x^2 / a^2 + y^2 / b^2 = 1
     edge = round(rad[0] / sqrt(1 + r_b_2 / r_a_2))
 
     delta = r_b_2 - round(r_a_2 * (rad[1] - 1 / 4))
 
-    while (x <= edge):
+    # первый интервал dy/dx > -1, выбор между двумя вертикальными
+    while x <= edge:
         if draw:
             draw_dots_ellipse(canvas_win, [x_c, y_c], [x, y], color)
 
-        if (delta > 0):
+        if delta > 0:
             y -= 1
             delta = delta - r_a_2 * y * 2
 
@@ -67,11 +69,12 @@ def mid_dot_ellipse(canvas_win, dot_c, rad, color, draw):
 
     delta = r_a_2 - round(r_b_2 * (x - 1 / 4))
 
-    while (y <= edge):
+    # снизу вверх
+    while y <= edge:
         if draw:
             draw_dots_ellipse(canvas_win, [x_c, y_c], [x, y], color)
 
-        if (delta > 0):
+        if delta > 0:
             x -= 1
             delta = delta - r_b_2 * x * 2
 

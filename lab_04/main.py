@@ -25,9 +25,9 @@ BOX_COLOR = "#ABCDEF"
 BOX_WIDTH = 45
 BOX_LITTLE_WIDTH = 30
 
-NUMBER_OF_RUNS = 20
-MAX_RADIUS = 10000
-STEP = 1000
+NUMBER_OF_RUNS = 100
+MAX_RADIUS = 1000
+STEP = 100
 
 
 # Methods
@@ -408,7 +408,7 @@ def time_measure(option_figure):
     plt.legend()
 
     plt.ylabel("Время")
-    plt.xlabel("Величина радиуса")
+    plt.xlabel("Величина радиуса (пиксели)")
 
     plt.show()
 

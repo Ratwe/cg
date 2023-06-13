@@ -16,7 +16,8 @@ def canon_circle(canvas_win, dot_c, radius, color, draw):
 
     x = 0
 
-    while (x <= edge):
+    while x <= edge:
+        # x^2 + y^2 = r^2
         y = round(sqrt(double_radius - x * x))
 
         if draw:
@@ -39,7 +40,8 @@ def canon_ellips(canvas_win, dot_c, rad, color, draw):
 
     x = 0
 
-    while (x <= edge):
+    while x <= edge:
+        # x^2 / a^2 + y^2 / b^2 = 1
         y = round(sqrt(1 - x * x / double_ra) * r_b)
 
         if draw:
@@ -51,7 +53,7 @@ def canon_ellips(canvas_win, dot_c, rad, color, draw):
 
     y = 0
 
-    while (y <= edge):
+    while y <= edge:
         x = round(sqrt(1 - y * y / double_rb) * r_a)
 
         if draw:   
