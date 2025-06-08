@@ -1,13 +1,7 @@
 from tkinter import Tk, Button, Label, Entry, END, Listbox, Canvas, Radiobutton, LEFT, RIGHT, IntVar, PhotoImage
 from tkinter import messagebox
-from math import sqrt, acos, degrees, pi, sin, cos, radians, floor, fabs
-import copy
-import numpy as np
-import matplotlib.pyplot as plt
 
 from time import time, sleep
-
-import colorutils as cu
 
 
 WIN_WIDTH = 1500
@@ -16,8 +10,8 @@ WIN_COLOR = "#CBF1F5"
 
 CV_WIDE = 700
 CV_HEIGHT = 700
-CV_COLOR = "#ffffff" #f3e6ff" #"#cce6ff"
-MAIN_TEXT_COLOR = "#11999E" #"lightblue" a94dff
+CV_COLOR = "#ffffff"
+MAIN_TEXT_COLOR = "#11999E"
 TEXT_COLOR = "#EEEEEE"
 
 TEMP_SIDE_COLOR_CHECK = (34, 40, 49)  # black
@@ -25,10 +19,10 @@ TEMP_SIDE_COLOR = "#222831"
 
 BOX_COLOR = "#71C9CE"
 
-COLOR_LINE = "black" #(0, 0, 0) # black
+COLOR_LINE = "black"
 COLOR_LINE_CHECK = (0, 0, 0)
 
-FILL_COLOR = "#222831"
+FILL_COLOR = "#008000"
 
 
 def check_option(option):
@@ -41,7 +35,7 @@ def clear_canvas():
 
 def draw_dot(x, y, color):
     image_canvas.put(color, (x, y))
-    
+
 
 
 def sign(difference):
@@ -136,7 +130,7 @@ def add_dot(x, y, close=False):
         sides_list[dots_ind].append([dots[dots_ind][cur_dot - 1], dots[dots_ind][cur_dot]])
 
         bresenham_int(dots[dots_ind][cur_dot - 1], dots[dots_ind][cur_dot], COLOR_LINE)
-        
+
 
 def del_dot():
     dots_ind = len(dots) - 1
@@ -185,7 +179,7 @@ def line_coefficients(x1, y1, x2, y2):
 
 
 def solve_lines_intersection(a1, b1, c1, a2, b2, c2):
-    opr = a1*b2 - a2*b1 # oriented product of rays
+    opr = a1*b2 - a2*b1  # oriented product of rays
     opr1 = (-c1)*b2 - b1*(-c2)
     opr2 = a1*(-c2) - (-c1)*a2
 
@@ -195,6 +189,7 @@ def solve_lines_intersection(a1, b1, c1, a2, b2, c2):
     return x, y
 
 
+# очерчивание
 def round_side(first_dot, second_dot):
     if first_dot[1] == second_dot[1]:
         return
@@ -212,13 +207,14 @@ def round_side(first_dot, second_dot):
 
     y = y_min
 
-    # цикл сканирующий прямых снизу вверх
+    # цикл сканирующих прямых снизу вверх
     while y < y_max:
         a_scan_line, b_scan_line, c_scan_line = line_coefficients(x, y, x + 1, y)
 
+        # пересечение прямой со стороной
         x_intersection, y_intersection = solve_lines_intersection(a_side, b_side, c_side, a_scan_line, b_scan_line, c_scan_line)
 
-        print("got", image_canvas.get(int(x_intersection) + 1, y))
+        print("got", image_canvas.get(int(x_intersection), y))
 
         if image_canvas.get(int(x_intersection) + 1, y) != TEMP_SIDE_COLOR_CHECK:
             image_canvas.put(TEMP_SIDE_COLOR, (int(x_intersection) + 1, y))
@@ -249,13 +245,13 @@ def get_edges(dots):
         for dot in figure:
             if dot[0] > x_max:
                 x_max = dot[0]
-            
+
             if dot[0] < x_min:
                 x_min = dot[0]
 
             if dot[1] < y_max:
                 y_max = dot[1]
-            
+
             if dot[1] > y_min:
                 y_min = dot[1]
 
@@ -293,15 +289,18 @@ def fill_with_sides_and_flag(sides_list, block_edges, color_fill, delay = False)
     x_min = block_edges[0]
 
     y_max = block_edges[3]
-    y_min = block_edges[1]    
+    y_min = block_edges[1]
 
     start_time = time()
 
+    # снизу вверх идут сканирующие линии
     for y in range(y_min, y_max - 1, -1):
         flag = False
 
-        for x in range(x_min, x_max + 2):
+        # слева направо чертим
+        for x in range(x_min, x_max + 1):
 
+            # если пересекаем ребро - меняем флаг (признак)
             if image_canvas.get(x, y) == TEMP_SIDE_COLOR_CHECK:
                 flag = not flag
 
@@ -348,13 +347,13 @@ def parse_color(num_color):
     color = "orange"
 
     if num_color == 1:
-        color = "#ff6e41" #"orange"
+        color = "#ff6e41"
     elif num_color == 2:
-        color = "#ff5733" #"red"
+        color = "#FF0000"
     elif num_color == 3:
-        color = "#0055ff" #"blue"
+        color = "#0055ff"
     elif num_color == 4:
-        color = "#45ff00" #"green"
+        color = "#45ff00"
 
     return color
 
@@ -368,8 +367,8 @@ if __name__ == "__main__":
 
     win = Tk()
     win['bg'] = WIN_COLOR
-    win.geometry("%dx%d" %(WIN_WIDTH, WIN_HEIGHT))
-    win.title("ЛР №5")
+    win.geometry("%dx%d" % (WIN_WIDTH, WIN_HEIGHT))
+    win.title("ЛР №5. Алгоритм заполнения со списком ребер и флагом.")
     win.resizable(False, False)
 
     canvas_win = Canvas(win, width = CV_WIDE, height = CV_HEIGHT, bg = CV_COLOR)
